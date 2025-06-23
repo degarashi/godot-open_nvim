@@ -6,6 +6,7 @@ const NEOVIM_OPTIONS = [".", "-qwindowgeometry", "2048x1200", "--", "--listen", 
 
 const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
 var btn: Button
+var process_id: int = -1
 
 
 func _enter_tree() -> void:
@@ -27,8 +28,11 @@ func _enter_tree() -> void:
 
 
 func _on_button_pressed() -> void:
-	OS.execute(NEOVIM_PATH, NEOVIM_OPTIONS)
+	if process_id == -1:
+		process_id = OS.create_process(NEOVIM_PATH, NEOVIM_OPTIONS)
 
 
 func _exit_tree() -> void:
+	if process_id != -1:
+		OS.kill(process_id)
 	btn.queue_free()
