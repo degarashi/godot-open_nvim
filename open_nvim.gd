@@ -1,6 +1,9 @@
 @tool
 extends EditorPlugin
 
+const NEOVIM_PATH = "C:/Program Files/neovim/bin/nvim-qt.exe"
+const NEOVIM_OPTIONS = [".", "-qwindowgeometry", "2048x1200", "--", "--listen", "127.0.0.1:6004"]
+
 const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
 var btn: Button
 
@@ -24,10 +27,7 @@ func _enter_tree() -> void:
 
 
 func _on_button_pressed() -> void:
-	OS.execute(
-		"C:/Program Files/neovim/bin/nvim-qt.exe",
-		[".", "-qwindowgeometry", "2048x1200", "--", "--listen", "127.0.0.1:6004"]
-	)
+	OS.execute(NEOVIM_PATH, NEOVIM_OPTIONS)
 
 
 func _exit_tree() -> void:
