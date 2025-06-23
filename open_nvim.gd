@@ -6,7 +6,11 @@ const NEOVIM_OPTIONS = [".", "-qwindowgeometry", "2048x1200", "--", "--listen", 
 
 const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
 var btn: Button
-var process_id: int = -1
+var process_id: Array[int] = []
+
+
+static func _is_pid_valid(pid: int) -> bool:
+	return pid != -1
 
 
 func _enter_tree() -> void:
@@ -28,11 +32,11 @@ func _enter_tree() -> void:
 
 
 func _on_button_pressed() -> void:
-	if process_id == -1:
-		process_id = OS.create_process(NEOVIM_PATH, NEOVIM_OPTIONS)
+	process_id.append(OS.create_process(NEOVIM_PATH, NEOVIM_OPTIONS))
 
 
 func _exit_tree() -> void:
-	if process_id != -1:
-		OS.kill(process_id)
+	for pid in process_id:
+		if _is_pid_valid(pid):
+			OS.kill(pid)
 	btn.queue_free()
