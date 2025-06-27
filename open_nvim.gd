@@ -2,7 +2,7 @@
 extends EditorPlugin
 
 const NEOVIM_PATH = "C:/Program Files/neovim/bin/nvim-qt.exe"
-const NEOVIM_OPTIONS = [".", "-qwindowgeometry", "2048x1200", "--", "--listen", "127.0.0.1:6004"]
+const NEOVIM_OPTIONS = ["-qwindowgeometry", "2048x1200", "--", "--listen", "127.0.0.1:6004"]
 
 const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
 var btn: Button
@@ -35,8 +35,27 @@ func _enter_tree() -> void:
 	_prepare_button()
 
 
+func _get_script_path_from_obj(obj: Object) -> String:
+	var script: Script = obj.get_script()
+	if script == null:
+		return ""
+	return script.resource_path
+
+
+func _get_script_path_from_sceneroot() -> String:
+	var scene_root := get_editor_interface().get_edited_scene_root()
+	if scene_root == null:
+		return ""
+	return _get_script_path_from_obj(scene_root)
+
+
 func _on_button_pressed() -> void:
-	process_id.append(OS.create_process(NEOVIM_PATH, NEOVIM_OPTIONS))
+	var path := _get_script_path_from_sceneroot()
+	var target := "."
+	if not path.is_empty():
+		target = ProjectSettings.globalize_path(path)
+	var options := [target] + NEOVIM_OPTIONS
+	process_id.append(OS.create_process(NEOVIM_PATH, options))
 
 
 func _exit_tree() -> void:
