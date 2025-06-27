@@ -42,5 +42,5 @@ func _on_button_pressed() -> void:
 func _exit_tree() -> void:
 	for pid in process_id:
 		if _is_pid_valid(pid):
-			OS.kill(pid)
+			OS.execute("taskkill", ["/pid", pid, "/t", "/f"])
 	btn.queue_free()
