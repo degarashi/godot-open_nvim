@@ -13,7 +13,7 @@ static func _is_pid_valid(pid: int) -> bool:
 	return pid != -1
 
 
-func _enter_tree() -> void:
+func _prepare_button() -> void:
 	btn = Button.new()
 	btn.text = "       Open Nvim"
 	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -29,6 +29,10 @@ func _enter_tree() -> void:
 	btn.pressed.connect(_on_button_pressed)
 
 	add_control_to_container(CONTAINER_TOOLBAR, btn)
+
+
+func _enter_tree() -> void:
+	_prepare_button()
 
 
 func _on_button_pressed() -> void:
