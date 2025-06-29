@@ -2,29 +2,9 @@
 class_name OpenNvim
 extends EditorPlugin
 
+
 # --------------------------------------------------
-# <Constants>
-const NEOVIM_PATH_DEFAULT = "C:/Program Files/neovim/bin/nvim-qt.exe"
-const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
-const PLUGIN_NAME = "OpenNvim"
-
-func make_neovim_args() -> Array[String]:
-	var size :Vector2i = get_setting_value(SettingName.WINDOW_SIZE)
-	var ip: String = get_setting_value(SettingName.IP_ADDRESS)
-	var port: int = get_setting_value(SettingName.PORT)
-	return [
-		"-qwindowgeometry",
-		"{}x{}".format([size.x, size.y], "{}"),
-		"--",
-		"--listen",
-		"{}:{}".format([ip, port], "{}"),
-	]
-
-
-func get_setting_value(name: String) -> Variant:
-	return ProjectSettings.get_setting(settings_ent[name].sys_name)
-
-
+# <Defines>
 class SettingsEntry:
 	var sys_name: String
 	var face_name: String
@@ -75,8 +55,20 @@ class SettingName:
 	const IP_ADDRESS := &"ip"
 	const PORT := &"port"
 
-var settings_ent: Dictionary[StringName, SettingsEntry] = {
-	SettingName.NEOVIM_EXECUTABLE: 
+
+# --------------------------------------------------
+# <Constants>
+const NEOVIM_PATH_DEFAULT = "C:/Program Files/neovim/bin/nvim-qt.exe"
+const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
+const PLUGIN_NAME = "OpenNvim"
+
+# --------------------------------------------------
+# <Private Variable>
+var _btn: Button
+var _process_id: Array[int] = []
+var _settings_ent: Dictionary = {
+	SettingName.NEOVIM_EXECUTABLE:
+	(
 		SettingsEntry
 		. new(
 			SettingName.NEOVIM_EXECUTABLE,
@@ -85,34 +77,14 @@ var settings_ent: Dictionary[StringName, SettingsEntry] = {
 			NEOVIM_PATH_DEFAULT,
 			PROPERTY_HINT_FILE,
 			"*.exe",
-		),
+		)
+	),
 	SettingName.WINDOW_SIZE:
-		SettingsEntry.new(
-			SettingName.WINDOW_SIZE,
-			"Window Size",
-			TYPE_VECTOR2I,
-			Vector2i(2048,1200)
-		),
+	SettingsEntry.new(SettingName.WINDOW_SIZE, "Window Size", TYPE_VECTOR2I, Vector2i(2048, 1200)),
 	SettingName.IP_ADDRESS:
-		SettingsEntry.new(
-			SettingName.IP_ADDRESS,
-			"IP Address",
-			TYPE_STRING,
-			"127.0.0.1"
-		),
-	SettingName.PORT:
-		SettingsEntry.new(
-			SettingName.PORT,
-			"Port",
-			TYPE_INT,
-			6004
-		),
+	SettingsEntry.new(SettingName.IP_ADDRESS, "IP Address", TYPE_STRING, "127.0.0.1"),
+	SettingName.PORT: SettingsEntry.new(SettingName.PORT, "Port", TYPE_INT, 6004),
 }
-
-# --------------------------------------------------
-# <Private Variable>
-var btn: Button
-var process_id: Array[int] = []
 
 
 # --------------------------------------------------
@@ -125,10 +97,10 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
-	for pid in process_id:
+	for pid in _process_id:
 		if _is_pid_valid(pid):
 			OS.execute("taskkill", ["/pid", pid, "/t", "/f"])
-	btn.queue_free()
+	_btn.queue_free()
 
 
 func _on_button_pressed() -> void:
@@ -136,24 +108,41 @@ func _on_button_pressed() -> void:
 	var target := "."
 	if not path.is_empty():
 		target = ProjectSettings.globalize_path(path)
-	var options := [target] + make_neovim_args()
-	var exec_path :String = get_setting_value(SettingName.NEOVIM_EXECUTABLE)
-	process_id.append(OS.create_process(exec_path, options))
+	var options := [target] + _make_neovim_args()
+	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+	_process_id.append(OS.create_process(exec_path, options))
 
 
 # --------------------------------------------------
 # [Private Method]
+func _make_neovim_args() -> Array[String]:
+	var size: Vector2i = _get_setting_value(SettingName.WINDOW_SIZE)
+	var ip: String = _get_setting_value(SettingName.IP_ADDRESS)
+	var port: int = _get_setting_value(SettingName.PORT)
+	return [
+		"-qwindowgeometry",
+		"{}x{}".format([size.x, size.y], "{}"),
+		"--",
+		"--listen",
+		"{}:{}".format([ip, port], "{}"),
+	]
+
+
+func _get_setting_value(name: String) -> Variant:
+	return ProjectSettings.get_setting(_settings_ent[name].sys_name)
+
+
 func _prepare_preferences() -> void:
-	for ent: SettingsEntry in settings_ent.values():
+	for ent: SettingsEntry in _settings_ent.values():
 		ent.add_property_info()
 	ProjectSettings.save()
 
 
 func _prepare_button() -> void:
-	btn = Button.new()
-	btn.text = "       Open Nvim"
-	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_btn = Button.new()
+	_btn.text = "       Open Nvim"
+	_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	var tex_rect := TextureRect.new()
 	tex_rect.texture = ICON_TEX
@@ -161,10 +150,10 @@ func _prepare_button() -> void:
 	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tex_rect.custom_minimum_size = Vector2(32, 32)
 
-	btn.add_child(tex_rect)
-	btn.pressed.connect(_on_button_pressed)
+	_btn.add_child(tex_rect)
+	_btn.pressed.connect(_on_button_pressed)
 
-	add_control_to_container(CONTAINER_TOOLBAR, btn)
+	add_control_to_container(CONTAINER_TOOLBAR, _btn)
 
 
 func _get_script_path_from_obj(obj: Object) -> String:
