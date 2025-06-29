@@ -9,7 +9,7 @@ const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
 const PLUGIN_NAME = "OpenNvim"
 
 func make_neovim_args() -> Array[String]:
-	var size :Vector2i = ProjectSettings.get_setting(settings_ent[SettingName.WINDOW_SIZE].sys_name)
+	var size :Vector2i = get_setting_value(SettingName.WINDOW_SIZE)
 	return [
 		"-qwindowgeometry",
 		"{}x{}".format([size.x, size.y], "{}"),
@@ -17,6 +17,10 @@ func make_neovim_args() -> Array[String]:
 		"--listen",
 		"127.0.0.1:6004"
 	]
+
+
+func get_setting_value(name: String) -> Variant:
+	return ProjectSettings.get_setting(settings_ent[name].sys_name)
 
 
 class SettingsEntry:
@@ -118,7 +122,7 @@ func _on_button_pressed() -> void:
 		target = ProjectSettings.globalize_path(path)
 	var options := [target] + make_neovim_args()
 	print(options)
-	var exec_path :String = ProjectSettings.get_setting(settings_ent[SettingName.NEOVIM_EXECUTABLE].sys_name)
+	var exec_path :String = get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 	process_id.append(OS.create_process(exec_path, options))
 
 
