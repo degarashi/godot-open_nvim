@@ -121,9 +121,7 @@ var process_id: Array[int] = []
 # [Private Method (Callback)]
 func _enter_tree() -> void:
 	_prepare_button()
-	for ent: SettingsEntry in settings_ent.values():
-		ent.add_property_info()
-	ProjectSettings.save()
+	_prepare_preferences()
 
 
 func _exit_tree() -> void:
@@ -145,6 +143,12 @@ func _on_button_pressed() -> void:
 
 # --------------------------------------------------
 # [Private Method]
+func _prepare_preferences() -> void:
+	for ent: SettingsEntry in settings_ent.values():
+		ent.add_property_info()
+	ProjectSettings.save()
+
+
 func _prepare_button() -> void:
 	btn = Button.new()
 	btn.text = "       Open Nvim"
