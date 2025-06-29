@@ -1,11 +1,74 @@
 @tool
+class_name OpenNvim
 extends EditorPlugin
 
 # --------------------------------------------------
 # <Constants>
-const NEOVIM_PATH = "C:/Program Files/neovim/bin/nvim-qt.exe"
+const NEOVIM_PATH_DEFAULT = "C:/Program Files/neovim/bin/nvim-qt.exe"
 const NEOVIM_OPTIONS = ["-qwindowgeometry", "2048x1200", "--", "--listen", "127.0.0.1:6004"]
 const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
+const PLUGIN_NAME = "OpenNvim"
+
+
+class SettingsEntry:
+	var sys_name: String
+	var face_name: String
+	var type: int
+	var default_val: Variant
+	var prop_hint: int
+	var prop_hint_str: String
+	var usage: int
+
+	func _init(
+		sysname: String,
+		facename: String,
+		type_id: int,
+		defaultval: Variant,
+		prophint: int = PROPERTY_HINT_NONE,
+		prophintstring: String = "",
+		usage_id: int = PROPERTY_USAGE_DEFAULT,
+	) -> void:
+		sys_name = PLUGIN_NAME + "/" + sysname
+		face_name = facename
+		type = type_id
+		default_val = defaultval
+		prop_hint = prophint
+		prop_hint_str = prophintstring
+		usage = usage_id
+
+	func add_property_info() -> void:
+		var p := ProjectSettings
+		if not p.has_setting(sys_name):
+			p.set_setting(sys_name, default_val)
+			(
+				p
+				. add_property_info(
+					{
+						"name": face_name,
+						"type": type,
+						"hint": prop_hint,
+						"hint_string": prop_hint_str,
+						"usage": usage,
+					}
+				)
+			)
+
+
+class SettingName:
+	const NEOVIM_EXECUTABLE := &"neovim_executable"
+
+var settings_ent: Dictionary[StringName, SettingsEntry] = {
+	SettingName.NEOVIM_EXECUTABLE: 
+		SettingsEntry
+		. new(
+			SettingName.NEOVIM_EXECUTABLE,
+			"Neovim Executable",
+			TYPE_STRING,
+			NEOVIM_PATH_DEFAULT,
+			PROPERTY_HINT_FILE,
+			"*.exe",
+		)
+}
 
 # --------------------------------------------------
 # <Private Variable>
@@ -19,6 +82,9 @@ var process_id: Array[int] = []
 # [Private Method (Callback)]
 func _enter_tree() -> void:
 	_prepare_button()
+	for ent: SettingsEntry in settings_ent.values():
+		ent.add_property_info()
+	ProjectSettings.save()
 
 
 func _exit_tree() -> void:
@@ -34,7 +100,9 @@ func _on_button_pressed() -> void:
 	if not path.is_empty():
 		target = ProjectSettings.globalize_path(path)
 	var options := [target] + NEOVIM_OPTIONS
-	process_id.append(OS.create_process(NEOVIM_PATH, options))
+
+	var exec_path :String = ProjectSettings.get_setting(settings_ent[SettingName.NEOVIM_EXECUTABLE].sys_name)
+	process_id.append(OS.create_process(exec_path, options))
 
 
 # --------------------------------------------------
