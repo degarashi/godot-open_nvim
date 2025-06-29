@@ -5,9 +5,18 @@ extends EditorPlugin
 # --------------------------------------------------
 # <Constants>
 const NEOVIM_PATH_DEFAULT = "C:/Program Files/neovim/bin/nvim-qt.exe"
-const NEOVIM_OPTIONS = ["-qwindowgeometry", "2048x1200", "--", "--listen", "127.0.0.1:6004"]
 const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
 const PLUGIN_NAME = "OpenNvim"
+
+func make_neovim_args() -> Array[String]:
+	var size :Vector2i = ProjectSettings.get_setting(settings_ent[SettingName.WINDOW_SIZE].sys_name)
+	return [
+		"-qwindowgeometry",
+		"{}x{}".format([size.x, size.y], "{}"),
+		"--",
+		"--listen",
+		"127.0.0.1:6004"
+	]
 
 
 class SettingsEntry:
@@ -56,6 +65,7 @@ class SettingsEntry:
 
 class SettingName:
 	const NEOVIM_EXECUTABLE := &"neovim_executable"
+	const WINDOW_SIZE := &"window_size"
 
 var settings_ent: Dictionary[StringName, SettingsEntry] = {
 	SettingName.NEOVIM_EXECUTABLE: 
@@ -67,7 +77,14 @@ var settings_ent: Dictionary[StringName, SettingsEntry] = {
 			NEOVIM_PATH_DEFAULT,
 			PROPERTY_HINT_FILE,
 			"*.exe",
-		)
+		),
+	SettingName.WINDOW_SIZE:
+		SettingsEntry.new(
+			SettingName.WINDOW_SIZE,
+			"Window Size",
+			TYPE_VECTOR2I,
+			Vector2i(2048,1200)
+		),
 }
 
 # --------------------------------------------------
@@ -99,8 +116,8 @@ func _on_button_pressed() -> void:
 	var target := "."
 	if not path.is_empty():
 		target = ProjectSettings.globalize_path(path)
-	var options := [target] + NEOVIM_OPTIONS
-
+	var options := [target] + make_neovim_args()
+	print(options)
 	var exec_path :String = ProjectSettings.get_setting(settings_ent[SettingName.NEOVIM_EXECUTABLE].sys_name)
 	process_id.append(OS.create_process(exec_path, options))
 
