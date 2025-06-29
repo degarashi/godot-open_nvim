@@ -139,7 +139,6 @@ func _on_button_pressed() -> void:
 	if not path.is_empty():
 		target = ProjectSettings.globalize_path(path)
 	var options := [target] + make_neovim_args()
-	print(options)
 	var exec_path :String = get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 	process_id.append(OS.create_process(exec_path, options))
 
