@@ -10,12 +10,14 @@ const PLUGIN_NAME = "OpenNvim"
 
 func make_neovim_args() -> Array[String]:
 	var size :Vector2i = get_setting_value(SettingName.WINDOW_SIZE)
+	var ip: String = get_setting_value(SettingName.IP_ADDRESS)
+	var port: int = get_setting_value(SettingName.PORT)
 	return [
 		"-qwindowgeometry",
 		"{}x{}".format([size.x, size.y], "{}"),
 		"--",
 		"--listen",
-		"127.0.0.1:6004"
+		"{}:{}".format([ip, port], "{}"),
 	]
 
 
@@ -70,6 +72,8 @@ class SettingsEntry:
 class SettingName:
 	const NEOVIM_EXECUTABLE := &"neovim_executable"
 	const WINDOW_SIZE := &"window_size"
+	const IP_ADDRESS := &"ip"
+	const PORT := &"port"
 
 var settings_ent: Dictionary[StringName, SettingsEntry] = {
 	SettingName.NEOVIM_EXECUTABLE: 
@@ -88,6 +92,20 @@ var settings_ent: Dictionary[StringName, SettingsEntry] = {
 			"Window Size",
 			TYPE_VECTOR2I,
 			Vector2i(2048,1200)
+		),
+	SettingName.IP_ADDRESS:
+		SettingsEntry.new(
+			SettingName.IP_ADDRESS,
+			"IP Address",
+			TYPE_STRING,
+			"127.0.0.1"
+		),
+	SettingName.PORT:
+		SettingsEntry.new(
+			SettingName.PORT,
+			"Port",
+			TYPE_INT,
+			6004
 		),
 }
 
