@@ -5,11 +5,12 @@ godot-open_nvim
 ---
 
 # 概要
-GodotエディタからNeovimを一発で起動する為のシンプルなプラグイン。<br>Windows専用。
+GodotエディタからNeovimを一発で起動する為のシンプルなプラグイン。<br>今のところWindows & nvim-qt専用。
 
 # インストール
 godotプロジェクトディレクトリのaddonsに置く
 
 # 使い方
 <img src="./images/open_nvim_button.png" alt="usage image"/>
-右上のボタンを押す
+右上のボタンを押すと、Neovimで現在開いているシーンにアタッチされたスクリプトが開かれる。<br>
+(何もアタッチされていなければエディタが起動するのみ)
