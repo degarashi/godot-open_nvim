@@ -72,6 +72,9 @@ const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
 # プラグイン名
 const PLUGIN_NAME = "OpenNvim"
 
+const OPEN_NVIM_ACTION = "open_nvim"
+const OPEN_NVIM_KEY = "input/" + OPEN_NVIM_ACTION
+
 # --------------------------------------------------
 # <Private Variable>
 # ツールバーに表示するボタン
@@ -111,6 +114,13 @@ var _settings_ent: Dictionary = {
 func _enter_tree() -> void:
 	_prepare_button()
 	_prepare_preferences()
+	_register_shortcut()
+
+
+func _input(_event: InputEvent) -> void:
+	if Input.is_action_just_pressed(OPEN_NVIM_ACTION):
+		_open_nvim()
+		get_tree().root.set_input_as_handled()
 
 
 func _exit_tree() -> void:
@@ -122,9 +132,10 @@ func _exit_tree() -> void:
 			OS.execute("taskkill", ["/pid", str(pid), "/t", "/f"])
 	# ボタンを削除
 	_btn.queue_free()
+	_unregister_shortcut()
 
 
-func _on_button_pressed() -> void:
+func _open_nvim() -> void:
 	# 現在編集中のシーンのスクリプトパスを取得
 	var path := _get_script_path_from_sceneroot()
 	var target := "."  # デフォルトはカレントディレクトリ
@@ -191,7 +202,7 @@ func _prepare_button() -> void:
 
 	# TextureRectをButtonの子として追加
 	_btn.add_child(tex_rect)
-	_btn.pressed.connect(_on_button_pressed)
+	_btn.pressed.connect(_open_nvim)
 
 	# 作成したボタンをエディタのツールバーコンテナに追加
 	add_control_to_container(CONTAINER_TOOLBAR, _btn)
@@ -224,3 +235,31 @@ func _get_script_path_from_sceneroot() -> String:
 static func _is_pid_valid(pid: int) -> bool:
 	# プロセスIDが-1でない場合、有効とみなす
 	return pid != -1
+
+
+# --------------------------------------------------
+# [Private Method]
+static func _make_shortcut() -> Dictionary:
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_M
+	ev.alt_pressed = true
+	return {"deadzone": 0.5, "events": [ev]}
+
+
+func _register_shortcut() -> void:
+	var sc := _make_shortcut()
+	if not ProjectSettings.has_setting(OPEN_NVIM_KEY):
+		ProjectSettings.set_setting(OPEN_NVIM_KEY, sc)
+		InputMap.load_from_project_settings()
+
+	ProjectSettings.set_initial_value(OPEN_NVIM_KEY, sc)
+	ProjectSettings.save()
+
+
+func _unregister_shortcut() -> void:
+	if ProjectSettings.has_setting(OPEN_NVIM_KEY):
+		var setting: Dictionary = ProjectSettings.get_setting(OPEN_NVIM_KEY)
+		var sc := _make_shortcut()
+		if var_to_str(sc) == var_to_str(setting):
+			return
+		ProjectSettings.clear(OPEN_NVIM_KEY)
