@@ -250,8 +250,8 @@ func _register_shortcut() -> void:
 	var sc := _make_shortcut()
 	if not ProjectSettings.has_setting(OPEN_NVIM_KEY):
 		ProjectSettings.set_setting(OPEN_NVIM_KEY, sc)
-		InputMap.load_from_project_settings()
 
+	InputMap.load_from_project_settings()
 	ProjectSettings.set_initial_value(OPEN_NVIM_KEY, sc)
 	ProjectSettings.save()
 
