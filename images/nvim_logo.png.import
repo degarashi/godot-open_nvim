@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://g7fjbsbsf7yl"
-path="res://.godot/imported/nvim_logo.png-5ebdb258b59104b54b45a251af8b2ea5.ctex"
+path="res://.godot/imported/nvim_logo.png-6aeb4d780c19f02602a32c4b1ee05b3f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/open_nvim/nvim_logo.png"
-dest_files=["res://.godot/imported/nvim_logo.png-5ebdb258b59104b54b45a251af8b2ea5.ctex"]
+source_file="res://addons/open_nvim/images/nvim_logo.png"
+dest_files=["res://.godot/imported/nvim_logo.png-6aeb4d780c19f02602a32c4b1ee05b3f.ctex"]
 
 [params]
 

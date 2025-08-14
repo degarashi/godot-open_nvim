@@ -59,7 +59,7 @@ class SettingName:
 # --------------------------------------------------
 # <Constants>
 const NEOVIM_PATH_DEFAULT = "C:/Program Files/neovim/bin/nvim-qt.exe"
-const ICON_TEX := preload("res://addons/open_nvim/nvim_logo.png")
+const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
 const PLUGIN_NAME = "OpenNvim"
 
 # --------------------------------------------------
