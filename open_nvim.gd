@@ -95,7 +95,7 @@ var _btn: Button
 var _process_id: Array[int] = []
 # プロジェクト設定のエントリを定義
 var _settings_ent: Dictionary = {
-	# nvim-qt実行ファイルのパス設定
+	# neovim実行ファイルのパス設定
 	SettingName.NEOVIM_EXECUTABLE:
 	(
 		SettingsEntry
@@ -108,9 +108,11 @@ var _settings_ent: Dictionary = {
 			"*.exe",  # prop_hint_str (exeファイルのみを選択可能にする)
 		)
 	),
-	# ウィンドウサイズ
+	# ウィンドウサイズ（nvim-qt はピクセル、neovide は本来 cols/rows。ここでは引数分岐で扱いを変える）
 	SettingName.WINDOW_SIZE:
-	SettingsEntry.new(SettingName.WINDOW_SIZE, "Window Size", TYPE_VECTOR2I, Vector2i(2048, 1200)),
+	SettingsEntry.new(
+		SettingName.WINDOW_SIZE, "Window Size (nvim-qt)", TYPE_VECTOR2I, Vector2i(2048, 1200)
+	),
 	# IPアドレス
 	SettingName.IP_ADDRESS:
 	SettingsEntry.new(SettingName.IP_ADDRESS, "IP Address", TYPE_STRING, "127.0.0.1"),
@@ -164,19 +166,32 @@ func _open_nvim() -> void:
 
 # --------------------------------------------------
 # [Private Method]
-# Neovim起動時の追加引数を生成
+# 実行ファイルパスから neovide かどうかを判定
+static func _is_neovide_exec(exec_path: String) -> bool:
+	return exec_path.to_lower().find("neovide") != -1
+
+
+# Neovim起動時の追加引数を生成（nvim-qt / neovide を分岐）
 func _make_neovim_args() -> Array[String]:
-	# プロジェクト設定からウィンドウサイズ、IPアドレス、ポート番号を取得
 	var size: Vector2i = _get_setting_value(SettingName.WINDOW_SIZE)
 	var ip: String = _get_setting_value(SettingName.IP_ADDRESS)
 	var port: int = _get_setting_value(SettingName.PORT)
-	# (nvim-qt限定) コマンドライン引数を生成
+	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+
+	if _is_neovide_exec(exec_path):
+		# neovide 用
+		# ウィンドウサイズは neovide 側に明示的に渡さず、neovide の「前回サイズ記憶」に委ねる。
+		return [
+			"--listen",
+			"%s:%d" % [ip, port],
+		]
+	# nvim-qt 用（ピクセル指定の -qwindowgeometry を使用）
 	return [
-		"-qwindowgeometry",  # ウィンドウジオメトリを指定するオプション
-		"%dx%d" % [size.x, size.y],  # ウィンドウサイズ (例: "2048x1200")
-		"--",  # オプションと引数の区切り
-		"--listen",  # リッスンアドレスを指定するオプション
-		"%s:%d" % [ip, port],  # リッスンアドレス (例: "127.0.0.1:6004")
+		"-qwindowgeometry",
+		"%dx%d" % [size.x, size.y],
+		"--",
+		"--listen",
+		"%s:%d" % [ip, port],
 	]
 
 
