@@ -49,7 +49,6 @@ class SettingsEntry:
 						"type": type,  # データ型
 						"hint": prop_hint,  # プロパティヒント
 						"hint_string": prop_hint_str,  # ヒント文字列
-						"usage": usage,  # 使用方法
 					}
 				)
 			)
