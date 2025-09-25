@@ -24,8 +24,8 @@ class SettingsEntry:
 		prophintstring: String = "",
 		usage_id: int = PROPERTY_USAGE_DEFAULT,
 	) -> void:
-		# sys_name にプラグイン名をプレフィックスとして付与
-		sys_name = PLUGIN_NAME + "/" + sysname
+		# sys_name をキー結合ヘルパーで構築し、キー構造の変更に強くする
+		sys_name = PSKey.join([PLUGIN_NAME, sysname])
 		face_name = facename
 		type = type_id
 		default_val = defaultval
@@ -55,6 +55,18 @@ class SettingsEntry:
 			)
 
 
+# プロジェクト設定キーの結合ヘルパー
+class PSKey:
+	const SEP := "/"
+
+	static func join(parts: Array) -> String:
+		# すべてを文字列化して結合（StringName なども安全に扱う）
+		var str_parts: Array[String] = []
+		for p in parts:
+			str_parts.append(str(p))
+		return SEP.join(str_parts)
+
+
 # プロジェクト設定のキー名を定義する定数クラス
 class SettingName:
 	const NEOVIM_EXECUTABLE := &"neovim_executable"  # Neovim実行ファイルのパス
@@ -73,7 +85,7 @@ const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
 const PLUGIN_NAME = "OpenNvim"
 
 const OPEN_NVIM_ACTION = "open_nvim"
-const OPEN_NVIM_KEY = "input/" + OPEN_NVIM_ACTION
+# 入力マップ用 ProjectSettings キーはヘルパーで生成し、構造変更に耐性を持たせる
 
 # --------------------------------------------------
 # <Private Variable>
@@ -248,18 +260,20 @@ static func _make_shortcut() -> Dictionary:
 
 func _register_shortcut() -> void:
 	var sc := _make_shortcut()
-	if not ProjectSettings.has_setting(OPEN_NVIM_KEY):
-		ProjectSettings.set_setting(OPEN_NVIM_KEY, sc)
+	var key := PSKey.join(["input", OPEN_NVIM_ACTION])
+	if not ProjectSettings.has_setting(key):
+		ProjectSettings.set_setting(key, sc)
 
 	InputMap.load_from_project_settings()
-	ProjectSettings.set_initial_value(OPEN_NVIM_KEY, sc)
+	ProjectSettings.set_initial_value(key, sc)
 	ProjectSettings.save()
 
 
 func _unregister_shortcut() -> void:
-	if ProjectSettings.has_setting(OPEN_NVIM_KEY):
-		var setting := ProjectSettings.get_setting(OPEN_NVIM_KEY)
+	var key := PSKey.join(["input", OPEN_NVIM_ACTION])
+	if ProjectSettings.has_setting(key):
+		var setting := ProjectSettings.get_setting(key)
 		var sc := _make_shortcut()
 		#  辞書の値をそのまま比較し、一致している場合のみクリアする
 		if typeof(setting) == TYPE_DICTIONARY and setting == sc:
-			ProjectSettings.clear(OPEN_NVIM_KEY)
+			ProjectSettings.clear(key)
