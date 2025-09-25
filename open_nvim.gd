@@ -258,8 +258,8 @@ func _register_shortcut() -> void:
 
 func _unregister_shortcut() -> void:
 	if ProjectSettings.has_setting(OPEN_NVIM_KEY):
-		var setting: Dictionary = ProjectSettings.get_setting(OPEN_NVIM_KEY)
+		var setting := ProjectSettings.get_setting(OPEN_NVIM_KEY)
 		var sc := _make_shortcut()
-		if var_to_str(sc) == var_to_str(setting):
-			return
-		ProjectSettings.clear(OPEN_NVIM_KEY)
+		#  辞書の値をそのまま比較し、一致している場合のみクリアする
+		if typeof(setting) == TYPE_DICTIONARY and setting == sc:
+			ProjectSettings.clear(OPEN_NVIM_KEY)
