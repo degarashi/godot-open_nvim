@@ -160,7 +160,11 @@ func _open_nvim() -> void:
 	# プロジェクト設定からNeovimの実行パスを取得
 	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 	# Neovimプロセスを起動し、そのPIDを記録
-	_process_id.append(OS.create_process(exec_path, options))
+	var pid := OS.create_process(exec_path, options)
+	if pid != -1:
+		_process_id.append(pid)
+	else:
+		push_error("Failed to launch Neovim process: %s" % exec_path)
 
 
 # --------------------------------------------------
