@@ -93,7 +93,7 @@ var _btn: Button
 # 起動したNeovimプロセスのID
 var _process_id: Array[int] = []
 # プロジェクト設定のエントリを定義
-var _settings_ent: Dictionary = {
+var _settings_ent: Dictionary[StringName, SettingsEntry] = {
 	# neovim実行ファイルのパス設定
 	SettingName.NEOVIM_EXECUTABLE:
 	(
