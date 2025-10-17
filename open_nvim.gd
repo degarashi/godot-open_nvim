@@ -77,7 +77,7 @@ class SettingName:
 # --------------------------------------------------
 # <Constants>
 # デフォルトのNeovim実行ファイルパス (Windowsを想定)
-const NEOVIM_PATH_DEFAULT = "C:/Program Files/neovim/bin/nvim-qt.exe"
+const NEOVIM_PATH_DEFAULT = "nvim-qt.exe"
 # プラグインのアイコンテクスチャ
 const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
 # プラグイン名
