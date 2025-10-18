@@ -189,22 +189,18 @@ func _make_neovim_args() -> Array[String]:
 	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 
 	# nvim-qtでは -qwindowgeometryを使用
-	var ret: Array[String] = (
-		[]
-		if not _is_nvim_qt()
-		else [
+	var ret: Array[String] = []
+	if _is_nvim_qt():
+		ret = [
 			"-qwindowgeometry",
 			"%dx%d" % [size.x, size.y],
 		]
-	)
-	return (
-		ret
-		+ [
-			"--",
-			"--listen",
-			"%s:%d" % [ip, port],
-		]
-	)
+	ret += [
+		"--",
+		"--listen",
+		"%s:%d" % [ip, port],
+	]
+	return ret
 
 
 # 指定された設定名のプロジェクト設定値を取得
