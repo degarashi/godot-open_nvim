@@ -148,6 +148,10 @@ func _exit_tree() -> void:
 	_unregister_shortcut()
 
 
+func _nvim_executable_path() -> String:
+	return _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+
+
 func _open_nvim() -> void:
 	# 現在編集中のシーンのスクリプトパスを取得
 	var path := _get_script_path_from_sceneroot()
@@ -158,7 +162,7 @@ func _open_nvim() -> void:
 	# Neovim起動時のオプションを作成 (スクリプトパス + 追加引数)
 	var options := [target] + _make_neovim_args()
 	# プロジェクト設定からNeovimの実行パスを取得
-	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+	var exec_path: String = _nvim_executable_path()
 	# Neovimプロセスを起動し、そのPIDを記録
 	var pid := OS.create_process(exec_path, options)
 	if pid != -1:
@@ -167,11 +171,14 @@ func _open_nvim() -> void:
 		push_error("Failed to launch Neovim process: %s" % exec_path)
 
 
+func _is_nvim_qt() -> bool:
+	var path := _nvim_executable_path()
+	# pathに"nvim-qt"という文字列が含まれていればtrueを返す
+	return path.to_lower().find("nvim-qt") != -1
+
+
 # --------------------------------------------------
 # [Private Method]
-# 実行ファイルパスから neovide かどうかを判定
-static func _is_neovide_exec(exec_path: String) -> bool:
-	return exec_path.to_lower().find("neovide") != -1
 
 
 # Neovim起動時の追加引数を生成（nvim-qt / neovide を分岐）
@@ -181,21 +188,23 @@ func _make_neovim_args() -> Array[String]:
 	var port: int = _get_setting_value(SettingName.PORT)
 	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 
-	if _is_neovide_exec(exec_path):
-		# neovide 用
-		# ウィンドウサイズは neovide 側に明示的に渡さず、neovide の「前回サイズ記憶」に委ねる。
-		return [
+	# nvim-qtでは -qwindowgeometryを使用
+	var ret: Array[String] = (
+		[]
+		if not _is_nvim_qt()
+		else [
+			"-qwindowgeometry",
+			"%dx%d" % [size.x, size.y],
+		]
+	)
+	return (
+		ret
+		+ [
+			"--",
 			"--listen",
 			"%s:%d" % [ip, port],
 		]
-	# nvim-qt 用（ピクセル指定の -qwindowgeometry を使用）
-	return [
-		"-qwindowgeometry",
-		"%dx%d" % [size.x, size.y],
-		"--",
-		"--listen",
-		"%s:%d" % [ip, port],
-	]
+	)
 
 
 # 指定された設定名のプロジェクト設定値を取得
