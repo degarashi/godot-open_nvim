@@ -2,9 +2,41 @@
 class_name OpenNvim
 extends EditorPlugin
 
+# --------------------------------------------------
+# <Constants>
+# プラグイン名
+const PLUGIN_NAME = "OpenNvim"
+# プラグインのアイコンテクスチャ
+const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
+# ショートカットアクション名
+const OPEN_NVIM_ACTION = "open_nvim"
+# デフォルトのNeovim実行ファイルパス (Windowsを想定)
+const NEOVIM_PATH_DEFAULT = "nvim-qt.exe"
 
 # --------------------------------------------------
-# <Defines>
+# <Helper Classes>
+
+
+# プロジェクト設定キーの結合ヘルパー
+class PSKey:
+	const SEP := "/"
+
+	static func join(parts: Array) -> String:
+		# すべてを文字列化して結合（StringName なども安全に扱う）
+		var str_parts: Array[String] = []
+		for p in parts:
+			str_parts.append(str(p))
+		return SEP.join(str_parts)
+
+
+# プロジェクト設定のキー名を定義する定数クラス
+class SettingName:
+	const NEOVIM_EXECUTABLE := &"neovim_executable"  # Neovim実行ファイルのパス
+	const WINDOW_SIZE := &"window_size"  # Neovimウィンドウのサイズ
+	const IP_ADDRESS := &"ip"  # 接続先IPアドレス
+	const PORT := &"port"  # 接続先ポート番号
+
+
 # 設定項目を構造化するためのヘルパークラス
 class SettingsEntry:
 	var sys_name: String  # プロジェクト設定での実際のキー名 (例: "OpenNvim/neovim_executable")
@@ -54,40 +86,8 @@ class SettingsEntry:
 			)
 
 
-# プロジェクト設定キーの結合ヘルパー
-class PSKey:
-	const SEP := "/"
-
-	static func join(parts: Array) -> String:
-		# すべてを文字列化して結合（StringName なども安全に扱う）
-		var str_parts: Array[String] = []
-		for p in parts:
-			str_parts.append(str(p))
-		return SEP.join(str_parts)
-
-
-# プロジェクト設定のキー名を定義する定数クラス
-class SettingName:
-	const NEOVIM_EXECUTABLE := &"neovim_executable"  # Neovim実行ファイルのパス
-	const WINDOW_SIZE := &"window_size"  # Neovimウィンドウのサイズ
-	const IP_ADDRESS := &"ip"  # 接続先IPアドレス
-	const PORT := &"port"  # 接続先ポート番号
-
-
 # --------------------------------------------------
-# <Constants>
-# デフォルトのNeovim実行ファイルパス (Windowsを想定)
-const NEOVIM_PATH_DEFAULT = "nvim-qt.exe"
-# プラグインのアイコンテクスチャ
-const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
-# プラグイン名
-const PLUGIN_NAME = "OpenNvim"
-
-const OPEN_NVIM_ACTION = "open_nvim"
-# 入力マップ用 ProjectSettings キーはヘルパーで生成し、構造変更に耐性を持たせる
-
-# --------------------------------------------------
-# <Private Variable>
+# <Private Variables>
 # ツールバーに表示するボタン
 var _btn: Button
 # 起動したNeovimプロセスのID
@@ -119,11 +119,13 @@ var _settings_ent: Dictionary[StringName, SettingsEntry] = {
 	SettingName.PORT: SettingsEntry.new(SettingName.PORT, "Port", TYPE_INT, 6004),
 }
 
+# --------------------------------------------------
+# <Public Variables>
+# --------------------------------------------------
+
 
 # --------------------------------------------------
-# <Public Variable>
-# --------------------------------------------------
-# [Private Method (Callback)]
+# <Private Methods (Callbacks)>
 func _enter_tree() -> void:
 	_prepare_button()
 	_prepare_preferences()
@@ -148,67 +150,8 @@ func _exit_tree() -> void:
 	_unregister_shortcut()
 
 
-func _nvim_executable_path() -> String:
-	return _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
-
-
-func _open_nvim() -> void:
-	# 現在編集中のシーンのスクリプトパスを取得
-	var path := _get_script_path_from_sceneroot()
-	var target := "."  # デフォルトはカレントディレクトリ
-	# スクリプトパスが空でない場合、絶対パスに変換してtargetに設定
-	if not path.is_empty():
-		target = ProjectSettings.globalize_path(path)
-	# Neovim起動時のオプションを作成 (スクリプトパス + 追加引数)
-	var options := [target] + _make_neovim_args()
-	# プロジェクト設定からNeovimの実行パスを取得
-	var exec_path: String = _nvim_executable_path()
-	# Neovimプロセスを起動し、そのPIDを記録
-	var pid := OS.create_process(exec_path, options)
-	if pid != -1:
-		_process_id.append(pid)
-	else:
-		push_error("Failed to launch Neovim process: %s" % exec_path)
-
-
-func _is_nvim_qt() -> bool:
-	var path := _nvim_executable_path()
-	# pathに"nvim-qt"という文字列が含まれていればtrueを返す
-	return path.to_lower().find("nvim-qt") != -1
-
-
 # --------------------------------------------------
 # [Private Method]
-
-
-# Neovim起動時の追加引数を生成（nvim-qt / neovide を分岐）
-func _make_neovim_args() -> Array[String]:
-	var size: Vector2i = _get_setting_value(SettingName.WINDOW_SIZE)
-	var ip: String = _get_setting_value(SettingName.IP_ADDRESS)
-	var port: int = _get_setting_value(SettingName.PORT)
-	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
-
-	# nvim-qtでは -qwindowgeometryを使用
-	var ret: Array[String] = []
-	if _is_nvim_qt():
-		ret = [
-			"-qwindowgeometry",
-			"%dx%d" % [size.x, size.y],
-		]
-	ret += [
-		"--",
-		"--listen",
-		"%s:%d" % [ip, port],
-	]
-	return ret
-
-
-# 指定された設定名のプロジェクト設定値を取得
-func _get_setting_value(name: String) -> Variant:
-	# _settings_ent 辞書から設定エントリを取得し、その sys_name を使って ProjectSettings から値を取得
-	return ProjectSettings.get_setting(_settings_ent[name].sys_name)
-
-
 # プロジェクト設定の準備
 func _prepare_preferences() -> void:
 	# _settings_ent に登録されている全ての設定エントリに対して add_property_info() を呼び出す
@@ -265,15 +208,67 @@ func _get_script_path_from_sceneroot() -> String:
 	return _get_script_path_from_obj(scene_root)
 
 
-# --------------------------------------------------
-# [Static Method]
-static func _is_pid_valid(pid: int) -> bool:
-	# プロセスIDが-1でない場合、有効とみなす
-	return pid != -1
+# 指定された設定名のプロジェクト設定値を取得
+func _get_setting_value(name: String) -> Variant:
+	# _settings_ent 辞書から設定エントリを取得し、その sys_name を使って ProjectSettings から値を取得
+	return ProjectSettings.get_setting(_settings_ent[name].sys_name)
 
 
-# --------------------------------------------------
-# [Private Method]
+# Neovim起動時の追加引数を生成（nvim-qt / neovide を分岐）
+func _make_neovim_args() -> Array[String]:
+	var size: Vector2i = _get_setting_value(SettingName.WINDOW_SIZE)
+	var ip: String = _get_setting_value(SettingName.IP_ADDRESS)
+	var port: int = _get_setting_value(SettingName.PORT)
+	var exec_path: String = _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+
+	# nvim-qtでは -qwindowgeometryを使用
+	var ret: Array[String] = []
+	if _is_nvim_qt():
+		ret = [
+			"-qwindowgeometry",
+			"%dx%d" % [size.x, size.y],
+		]
+	ret += [
+		"--",
+		"--listen",
+		"%s:%d" % [ip, port],
+	]
+	return ret
+
+
+# Neovimを実行ファイルパスから判断する
+func _is_nvim_qt() -> bool:
+	var path := _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+	# pathに"nvim-qt"という文字列が含まれていればtrueを返す
+	return path.to_lower().find("nvim-qt") != -1
+
+
+# Neovimプロセスを起動する
+func _open_nvim() -> void:
+	# 現在編集中のシーンのスクリプトパスを取得
+	var path := _get_script_path_from_sceneroot()
+	var target := "."  # デフォルトはカレントディレクトリ
+	# スクリプトパスが空でない場合、絶対パスに変換してtargetに設定
+	if not path.is_empty():
+		target = ProjectSettings.globalize_path(path)
+	# Neovim起動時のオプションを作成 (スクリプトパス + 追加引数)
+	var options := [target] + _make_neovim_args()
+	# プロジェクト設定からNeovimの実行パスを取得
+	var exec_path: String = _nvim_executable_path()
+	# Neovimプロセスを起動し、そのPIDを記録
+	var pid := OS.create_process(exec_path, options)
+	if pid != -1:
+		_process_id.append(pid)
+	else:
+		push_error("Failed to launch Neovim process: %s" % exec_path)
+
+
+# Neovim実行ファイルのパスを取得
+func _nvim_executable_path() -> String:
+	return _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
+
+
+# ショートカットキーの設定を生成
 static func _make_shortcut() -> Dictionary:
 	var ev := InputEventKey.new()
 	ev.keycode = KEY_M
@@ -281,6 +276,7 @@ static func _make_shortcut() -> Dictionary:
 	return {"deadzone": 0.5, "events": [ev]}
 
 
+# ショートカットキーを登録
 func _register_shortcut() -> void:
 	var sc := _make_shortcut()
 	var key := PSKey.join(["input", OPEN_NVIM_ACTION])
@@ -292,6 +288,7 @@ func _register_shortcut() -> void:
 	ProjectSettings.save()
 
 
+# ショートカットキーを解除
 func _unregister_shortcut() -> void:
 	var key := PSKey.join(["input", OPEN_NVIM_ACTION])
 	if ProjectSettings.has_setting(key):
@@ -300,3 +297,10 @@ func _unregister_shortcut() -> void:
 		#  辞書の値をそのまま比較し、一致している場合のみクリアする
 		if typeof(setting) == TYPE_DICTIONARY and setting == sc:
 			ProjectSettings.clear(key)
+
+
+# --------------------------------------------------
+# <Static Methods>
+static func _is_pid_valid(pid: int) -> bool:
+	# プロセスIDが-1でない場合、有効とみなす
+	return pid != -1
