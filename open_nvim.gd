@@ -268,34 +268,32 @@ func _nvim_executable_path() -> String:
 	return _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 
 
-# ショートカットキーの設定を生成
-static func _make_shortcut() -> Dictionary:
-	var ev := InputEventKey.new()
-	ev.keycode = KEY_M
-	ev.alt_pressed = true
-	return {"deadzone": 0.5, "events": [ev]}
-
-
-# ショートカットキーを登録
+# --------------------------------------------------
+# <Shortcut Handling>
 func _register_shortcut() -> void:
-	var sc := _make_shortcut()
-	var key := PSKey.join(["input", OPEN_NVIM_ACTION])
-	if not ProjectSettings.has_setting(key):
-		ProjectSettings.set_setting(key, sc)
+	if not InputMap.has_action(OPEN_NVIM_ACTION):
+		InputMap.add_action(OPEN_NVIM_ACTION)
 
-	InputMap.load_from_project_settings()
-	ProjectSettings.set_initial_value(key, sc)
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_L
+	ev.alt_pressed = true
+	ev.ctrl_pressed = true
+
+	InputMap.action_erase_events(OPEN_NVIM_ACTION)
+	InputMap.action_add_event(OPEN_NVIM_ACTION, ev)
+
+	ProjectSettings.set_setting(
+		"input/%s" % OPEN_NVIM_ACTION, InputMap.action_get_events(OPEN_NVIM_ACTION)
+	)
 	ProjectSettings.save()
 
 
 # ショートカットキーを解除
 func _unregister_shortcut() -> void:
-	var key := PSKey.join(["input", OPEN_NVIM_ACTION])
-	if ProjectSettings.has_setting(key):
-		var setting := ProjectSettings.get_setting(key)
-		var sc := _make_shortcut()
-		#  辞書の値をそのまま比較し、一致している場合のみクリアする
-		if typeof(setting) == TYPE_DICTIONARY and setting == sc:
+	if InputMap.has_action(OPEN_NVIM_ACTION):
+		InputMap.erase_action(OPEN_NVIM_ACTION)
+		var key := "input/%s" % OPEN_NVIM_ACTION
+		if ProjectSettings.has_setting(key):
 			ProjectSettings.clear(key)
 
 
