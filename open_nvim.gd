@@ -2,9 +2,7 @@
 class_name OpenNvim
 extends EditorPlugin
 
-# --------------------------------------------------
-# <Constants>
-# プラグイン名
+# ------------- [Constants] -------------
 const PLUGIN_NAME = "OpenNvim"
 # プラグインのアイコンテクスチャ
 const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
@@ -13,11 +11,8 @@ const OPEN_NVIM_ACTION = "open_nvim"
 # デフォルトのNeovim実行ファイルパス (Windowsを想定)
 const NEOVIM_PATH_DEFAULT = "nvim-qt.exe"
 
-# --------------------------------------------------
-# <Helper Classes>
 
-
-# エディタ設定キーの結合ヘルパー
+# ------------- [Defines] -------------
 class PSKey:
 	const SEP := "/"
 
@@ -81,9 +76,7 @@ class SettingsEntry:
 		)
 
 
-# --------------------------------------------------
-# <Private Variables>
-# ツールバーに表示するボタン
+# ------------- [Private Variable] -------------
 var _btn: Button
 # 起動したNeovimプロセスのID
 var _process_id: Array[int] = []
@@ -115,8 +108,7 @@ var _settings_ent: Dictionary[StringName, SettingsEntry] = {
 }
 
 
-# --------------------------------------------------
-# <Private Methods (Callbacks)>
+# ------------- [Callbacks] -------------
 func _enter_tree() -> void:
 	_prepare_button()
 	_prepare_preferences()
@@ -141,9 +133,12 @@ func _exit_tree() -> void:
 	_unregister_shortcut()
 
 
-# --------------------------------------------------
-# [Private Method]
-# エディタ設定の準備
+# ------------- [Private Static Method] -------------
+static func _is_pid_valid(pid: int) -> bool:
+	return pid != -1
+
+
+# ------------- [Private Method] -------------
 func _prepare_preferences() -> void:
 	var es: EditorSettings = get_editor_interface().get_editor_settings()
 	for ent: SettingsEntry in _settings_ent.values():
@@ -257,8 +252,6 @@ func _nvim_executable_path() -> String:
 	return _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
 
 
-# --------------------------------------------------
-# <Shortcut Handling>
 func _register_shortcut() -> void:
 	# 入力マップにアクションを追加（プロジェクト設定ではなく一時的に利用）
 	if not InputMap.has_action(OPEN_NVIM_ACTION):
@@ -279,9 +272,5 @@ func _unregister_shortcut() -> void:
 	if InputMap.has_action(OPEN_NVIM_ACTION):
 		InputMap.erase_action(OPEN_NVIM_ACTION)
 
-
-# --------------------------------------------------
-# <Static Methods>
-static func _is_pid_valid(pid: int) -> bool:
-	# プロセスIDが-1でない場合、有効とみなす
-	return pid != -1
+# ------------- [Public Method] -------------
+# (none)
