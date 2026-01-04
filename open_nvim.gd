@@ -128,8 +128,10 @@ func _exit_tree() -> void:
 	for pid in _process_id:
 		# プロセスIDが有効な場合のみ終了処理を行う
 		if _is_pid_valid(pid):
-			# (Windows環境限定)プロセスを強制終了するコマンドを実行
-			OS.execute("taskkill", ["/pid", str(pid), "/t", "/f"])
+			if OS.get_name() == "Windows":
+				OS.execute("taskkill", ["/pid", str(pid), "/t", "/f"])
+			else:
+				OS.execute("kill", ["-TERM", str(pid)])
 	# ボタンを削除
 	_btn.queue_free()
 
@@ -200,7 +202,7 @@ func _get_setting_value(name: String) -> Variant:
 
 
 # Neovim起動時の追加引数を生成（nvim-qt / neovide を分岐）
-func _make_neovim_args() -> Array[String]:
+func _make_neovim_args(enable_listen: bool) -> Array[String]:
 	var size: Vector2i = _get_setting_value(SettingName.WINDOW_SIZE)
 	var ip: String = _get_setting_value(SettingName.IP_ADDRESS)
 	var port: int = _get_setting_value(SettingName.PORT)
@@ -212,11 +214,15 @@ func _make_neovim_args() -> Array[String]:
 			"-qwindowgeometry",
 			"%dx%d" % [size.x, size.y],
 		]
-	ret += [
-		"--",
-		"--listen",
-		"%s:%d" % [ip, port],
-	]
+
+	ret.append("--")
+
+	if enable_listen:
+		ret += [
+			"--listen",
+			"%s:%d" % [ip, port],
+		]
+
 	return ret
 
 
@@ -235,16 +241,20 @@ func _open_nvim() -> void:
 	# スクリプトパスが空でない場合、絶対パスに変換してtargetに設定
 	if not path.is_empty():
 		target = ProjectSettings.globalize_path(path)
-	# Neovim起動時のオプションを作成 (スクリプトパス + 追加引数)
-	var options := [target] + _make_neovim_args()
-	# エディタ設定からNeovimの実行パスを取得
+
+	# listen は最初の1回だけ
+	var enable_listen := _process_id.size() == 0
+	var options := [target] + _make_neovim_args(enable_listen)
 	var exec_path: String = _nvim_executable_path()
-	# Neovimプロセスを起動し、そのPIDを記録
-	var pid := OS.create_process(exec_path, options)
-	if pid != -1:
-		_process_id.append(pid)
+
+	if OS.get_name() == "Windows":
+		var pid := OS.create_process(exec_path, options)
+		if pid != -1:
+			_process_id.append(pid)
 	else:
-		push_error("Failed to launch Neovim process: %s" % exec_path)
+		var pid = OS.create_process(exec_path, options)
+		if pid != -1:
+			_process_id.append(pid)
 
 
 # Neovim実行ファイルのパスを取得
