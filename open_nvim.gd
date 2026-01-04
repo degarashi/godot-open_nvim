@@ -61,9 +61,12 @@ class SettingsEntry:
 		usage = usage_id
 
 	func add_property_info(es: EditorSettings) -> void:
+		# (まだ存在してなければ)デフォルト値の設定
 		if not es.has_setting(sys_name):
 			es.set_setting(sys_name, default_val)
+
 		(
+			# 辞書形式で書き込み
 			es
 			. add_property_info(
 				{
