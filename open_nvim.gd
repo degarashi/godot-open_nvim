@@ -6,8 +6,8 @@ extends EditorPlugin
 const PLUGIN_NAME = "OpenNvim"
 # プラグインのアイコンテクスチャ
 const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
-# ショートカットアクション名
-const OPEN_NVIM_ACTION = "open_nvim"
+# ショートカット定義
+const SHORTCUT_OPEN_NVIM = preload("uid://dw8wppdnvbgea")
 # デフォルトのNeovim実行ファイルパス (Windowsを想定)
 const NEOVIM_PATH_DEFAULT = "nvim-qt.exe"
 
@@ -115,11 +115,10 @@ var _settings_ent: Dictionary[StringName, SettingsEntry] = {
 func _enter_tree() -> void:
 	_prepare_button()
 	_prepare_preferences()
-	_register_shortcut()
 
 
-func _input(_event: InputEvent) -> void:
-	if Input.is_action_just_pressed(OPEN_NVIM_ACTION):
+func _input(event: InputEvent) -> void:
+	if SHORTCUT_OPEN_NVIM.is_match(event) && event.is_pressed() && !event.is_echo():
 		_open_nvim()
 		get_tree().root.set_input_as_handled()
 
@@ -133,7 +132,6 @@ func _exit_tree() -> void:
 			OS.execute("taskkill", ["/pid", str(pid), "/t", "/f"])
 	# ボタンを削除
 	_btn.queue_free()
-	_unregister_shortcut()
 
 
 # ------------- [Private Static Method] -------------
@@ -253,27 +251,3 @@ func _open_nvim() -> void:
 func _nvim_executable_path() -> String:
 	# エディタ設定から取得
 	return _get_setting_value(SettingName.NEOVIM_EXECUTABLE)
-
-
-func _register_shortcut() -> void:
-	# 入力マップにアクションを追加（プロジェクト設定ではなく一時的に利用）
-	if not InputMap.has_action(OPEN_NVIM_ACTION):
-		InputMap.add_action(OPEN_NVIM_ACTION)
-
-	var ev := InputEventKey.new()
-	ev.keycode = KEY_L
-	ev.alt_pressed = true
-	ev.ctrl_pressed = true
-
-	InputMap.action_erase_events(OPEN_NVIM_ACTION)
-	InputMap.action_add_event(OPEN_NVIM_ACTION, ev)
-	# プロジェクト設定への保存は行わない
-
-
-# ショートカットキーを解除
-func _unregister_shortcut() -> void:
-	if InputMap.has_action(OPEN_NVIM_ACTION):
-		InputMap.erase_action(OPEN_NVIM_ACTION)
-
-# ------------- [Public Method] -------------
-# (none)
