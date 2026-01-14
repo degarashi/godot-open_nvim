@@ -233,6 +233,15 @@ func _is_nvim_qt() -> bool:
 	return path.to_lower().find("nvim-qt") != -1
 
 
+# 既に終了しているプロセスIDをリストから除外する
+func _cleanup_process_ids() -> void:
+	var active_pids: Array[int] = []
+	for pid in _process_id:
+		if OS.is_process_running(pid):
+			active_pids.append(pid)
+	_process_id = active_pids
+
+
 # Neovimプロセスを起動する
 func _open_nvim() -> void:
 	# 現在編集中のシーンのスクリプトパスを取得
@@ -241,6 +250,8 @@ func _open_nvim() -> void:
 	# スクリプトパスが空でない場合、絶対パスに変換してtargetに設定
 	if not path.is_empty():
 		target = ProjectSettings.globalize_path(path)
+
+	_cleanup_process_ids()
 
 	# listen は最初の1回だけ
 	var enable_listen := _process_id.size() == 0
