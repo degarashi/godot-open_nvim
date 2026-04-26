@@ -5,7 +5,7 @@ extends EditorPlugin
 # ------------- [Constants] -------------
 const PLUGIN_NAME = "OpenNvim"
 # プラグインのアイコンテクスチャ
-const ICON_TEX := preload("res://addons/open_nvim/images/nvim_logo.png")
+const ICON_TEX := preload("uid://g7fjbsbsf7yl")
 # ショートカット定義
 const SHORTCUT_OPEN_NVIM = preload("uid://dw8wppdnvbgea")
 # デフォルトのNeovim実行ファイルパス (Windowsを想定)
